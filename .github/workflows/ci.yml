@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -16,43 +17,36 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, intl, pdo_mysql, bcmath, curl, dom, fileinfo, gd, openssl, tokenizer, xml, ctype, json, zip
+          extensions: mbstring, intl, pdo_mysql, bcmath, ctype, tokenizer, dom, curl, fileinfo, gd, openssl, json, xml, zip
+          coverage: none
 
-      - name: Cache Composer
+      - name: Cache Composer vendor
         uses: actions/cache@v4
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
-      - name: Install Composer deps
-        env:
-          COMPOSER_NO_INTERACTION: 1
-          COMPOSER_MEMORY_LIMIT: -1
-        run: |
-          composer install --prefer-dist --no-progress
-
-      - name: Prepare .env and app key
-        run: |
-          [ -f .env ] || cp .env.example .env
-          php artisan key:generate --force
-
-      - name: Node build (if present)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-        continue-on-error: true
-      - name: Install & build frontend (if package.json exists)
-        run: |
-          if [ -f package.json ]; then
-            npm ci || npm install
-            npm run build --if-present || true
-          else
-            echo "No package.json; skipping frontend build."
-          fi
+      - name: Install Composer deps (no scripts)
+        run: composer install --no-ansi --no-interaction --no-progress --prefer-dist --no-scripts
 
       - name: PHP syntax lint
         run: |
-          set -e
-          files="$(git ls-files '*.php')"
-          [ -z "$files" ] || for f in $files; do php -l "$f"; done
+          find app config database resources routes tests -type f -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+
+      - name: Node setup
+        if: hashFiles('**/package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Node build (if package.json exists)
+        if: hashFiles('**/package.json') != ''
+        run: |
+          if [ -f vite.config.js ] || [ -f webpack.mix.js ]; then
+            npm ci --no-audit --no-fund
+            npm run build
+          else
+            echo "No frontend build"
+          fi
