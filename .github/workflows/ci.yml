@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -15,47 +17,32 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, intl, pdo_mysql, bcmath, curl, dom, fileinfo, gd, openssl, tokenizer, xml, ctype, json, zip
+          extensions: mbstring, intl, pdo_mysql, bcmath, ctype, tokenizer, dom, curl, fileinfo, json, xml
+          coverage: none
 
-      - name: Cache Composer
+      - name: Cache Composer vendor
         uses: actions/cache@v4
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
-      - name: Install Composer deps
-        env:
-          COMPOSER_NO_INTERACTION: 1
-          COMPOSER_MEMORY_LIMIT: -1
-        run: composer install --prefer-dist --no-progress
+      - name: Install Composer deps (no scripts)
+        run: composer install --no-ansi --no-interaction --no-progress --prefer-dist --no-scripts
 
-      - name: Prepare .env and app key
+      - name: PHP syntax lint
         run: |
-          [ -f .env ] || cp .env.example .env
-          php artisan key:generate --force
+          find app config database resources routes tests -type f -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
 
-      - name: Node build (if present)
+      - name: Node setup
+        if: hashFiles('**/package.json') != ''
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-        continue-on-error: true
+          node-version: '20'
 
-      - name: Install & build frontend (if package.json exists)
+      - name: Node build (if package.json exists)
+        if: hashFiles('**/package.json') != ''
         run: |
-          if [ -f package.json ]; then
-            npm ci || npm install
-            npm run build --if-present || true
-          else
-            echo "No package.json; skipping frontend build."
-          fi
-
-      - name: PHP syntax lint (exclude Blade templates)
-        run: |
-          set -e
-          files="$(git ls-files '*.php' | grep -vE '\.blade\.php$' || true)"
-          if [ -n "$files" ]; then
-            for f in $files; do php -l "$f"; done
-          else
-            echo "No non-Blade PHP files to lint."
-          fi
+          npm ci --no-audit --no-fund
+          if [ -f vite.config.js ] || [ -f webpack.mix.js ]; then npm run build; else echo "No frontend build"; fi
