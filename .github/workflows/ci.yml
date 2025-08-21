@@ -7,7 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,8 +28,7 @@ jobs:
         env:
           COMPOSER_NO_INTERACTION: 1
           COMPOSER_MEMORY_LIMIT: -1
-        run: |
-          composer install --prefer-dist --no-progress
+        run: composer install --prefer-dist --no-progress
 
       - name: Prepare .env and app key
         run: |
@@ -42,6 +40,7 @@ jobs:
         with:
           node-version: 18
         continue-on-error: true
+
       - name: Install & build frontend (if package.json exists)
         run: |
           if [ -f package.json ]; then
@@ -51,8 +50,12 @@ jobs:
             echo "No package.json; skipping frontend build."
           fi
 
-      - name: PHP syntax lint
+      - name: PHP syntax lint (exclude Blade templates)
         run: |
           set -e
-          files="$(git ls-files '*.php')"
-          [ -z "$files" ] || for f in $files; do php -l "$f"; done
+          files="$(git ls-files '*.php' | grep -vE '\.blade\.php$' || true)"
+          if [ -n "$files" ]; then
+            for f in $files; do php -l "$f"; done
+          else
+            echo "No non-Blade PHP files to lint."
+          fi
