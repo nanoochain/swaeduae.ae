@@ -1,4 +1,4 @@
-name: ci
+name: build
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, intl, pdo_mysql, bcmath, ctype, tokenizer, dom, curl, fileinfo, json, xml
+          extensions: mbstring, intl, pdo_mysql, bcmath, ctype, tokenizer, dom, curl, fileinfo, json, xml, gd, openssl, zip
           coverage: none
 
       - name: Cache Composer vendor
@@ -25,15 +25,14 @@ jobs:
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
+          restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Composer deps (no scripts)
         run: composer install --no-ansi --no-interaction --no-progress --prefer-dist --no-scripts
 
       - name: PHP syntax lint
         run: |
-          find app config database resources routes tests -type f -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+          find app config database resources routes tests -type f -name "*.php" -print0 | xargs -0 -n1 -P4 php -l
 
       - name: Node setup
         if: hashFiles('**/package.json') != ''
