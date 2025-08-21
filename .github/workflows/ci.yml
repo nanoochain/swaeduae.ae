@@ -1,17 +1,58 @@
 name: ci
+
 on:
   push:
   pull_request:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-      - name: Install Composer deps (no dev ok too)
-        run: composer install --no-interaction --prefer-dist --no-progress
-      - name: PHP syntax check
+          extensions: mbstring, intl, pdo_mysql, bcmath, curl, dom, fileinfo, gd, openssl, tokenizer, xml, ctype, json, zip
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer deps
+        env:
+          COMPOSER_NO_INTERACTION: 1
+          COMPOSER_MEMORY_LIMIT: -1
         run: |
-          find app bootstrap config database routes -type f -name "*.php" -print0 | xargs -0 -n1 -P4 php -l
+          composer install --prefer-dist --no-progress
+
+      - name: Prepare .env and app key
+        run: |
+          [ -f .env ] || cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Node build (if present)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+        continue-on-error: true
+      - name: Install & build frontend (if package.json exists)
+        run: |
+          if [ -f package.json ]; then
+            npm ci || npm install
+            npm run build --if-present || true
+          else
+            echo "No package.json; skipping frontend build."
+          fi
+
+      - name: PHP syntax lint
+        run: |
+          set -e
+          files="$(git ls-files '*.php')"
+          [ -z "$files" ] || for f in $files; do php -l "$f"; done
