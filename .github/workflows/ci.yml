@@ -1,4 +1,4 @@
-name: ci
+name: build
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, intl, pdo_mysql, bcmath, ctype, tokenizer, dom, curl, fileinfo, gd, openssl, json, xml, zip
+          extensions: mbstring, intl, pdo_mysql, bcmath, ctype, tokenizer, dom, curl, fileinfo, json, xml, gd, openssl, zip
           coverage: none
 
       - name: Cache Composer vendor
@@ -41,7 +41,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Node build (if package.json exists)
+      - name: Node build (if present)
         if: hashFiles('**/package.json') != ''
         run: |
           if [ -f vite.config.js ] || [ -f webpack.mix.js ]; then
