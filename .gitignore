@@ -46,3 +46,4 @@ routes/_archived/
 storage/app/backups/
 storage/logs/*.log
 database/database.sqlite
+swaeduae.ae/
