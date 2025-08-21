@@ -10,25 +10,19 @@ class ApplicationReviewController extends Controller
 {
     public function shortlist(Application $application): RedirectResponse
     {
-        $application->status = 'shortlisted';
-        $application->save();
-
+        $application->update(['status' => 'shortlisted']);
         return back()->with('status', 'Shortlisted');
     }
 
     public function accept(Application $application): RedirectResponse
     {
-        $application->status = 'accepted';
-        $application->save();
-
+        $application->update(['status' => 'accepted']);
         return back()->with('status', 'Accepted');
     }
 
     public function reject(Application $application): RedirectResponse
     {
-        $application->status = 'rejected';
-        $application->save();
-
+        $application->update(['status' => 'rejected']);
         return back()->with('status', 'Rejected');
     }
 }
