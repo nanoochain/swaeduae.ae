@@ -1,0 +1,13 @@
+name: guard-windows-filenames
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail on Windows-unsafe filenames
+        shell: bash
+        run: |
+          bad=$(git ls-files | grep -E '[<>:"\\|?*]|(^|/)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])($|/)' || true)
+          if [ -n "$bad" ]; then
+            echo "Found Windows-unsafe paths:"; echo "$bad"; exit 1; fi
