@@ -25,15 +25,14 @@ jobs:
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
+          restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Composer deps (no scripts)
         run: composer install --no-ansi --no-interaction --no-progress --prefer-dist --no-scripts
 
       - name: PHP syntax lint
         run: |
-          find app config database resources routes tests -type f -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+          find app config database resources routes tests -type f -name "*.php" -print0 | xargs -0 -n1 -P4 php -l
 
       - name: Node setup
         if: hashFiles('**/package.json') != ''
@@ -41,12 +40,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Node build (if present)
+      - name: Node build (if package.json exists)
         if: hashFiles('**/package.json') != ''
         run: |
-          if [ -f vite.config.js ] || [ -f webpack.mix.js ]; then
-            npm ci --no-audit --no-fund
-            npm run build
-          else
-            echo "No frontend build"
-          fi
+          npm ci --no-audit --no-fund
+          if [ -f vite.config.js ] || [ -f webpack.mix.js ]; then npm run build; else echo "No frontend build"; fi
