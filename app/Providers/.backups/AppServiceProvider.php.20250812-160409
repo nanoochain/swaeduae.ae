@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Cache;
+use App\Models\Setting;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void {}
+
+    public function boot(): void
+    {
+        View::composer('*', function ($view) {
+            $settings = Cache::remember('site.settings', 300, function () {
+                return [
+                    'site_name'       => Setting::get('site.name', 'SawaedUAE'),
+                    'site_tagline'    => Setting::get('site.tagline', 'Volunteering for everyone'),
+                    'logo'            => Setting::get('site.logo'),
+                    'favicon'         => Setting::get('site.favicon'),
+                    'seo_title'       => Setting::get('seo.meta_title', Setting::get('site.name', 'SawaedUAE')),
+                    'seo_description' => Setting::get('seo.meta_description', 'Find opportunities, events, and organizations to volunteer with.'),
+                    'social' => [
+                        'facebook'  => Setting::get('social.facebook'),
+                        'instagram' => Setting::get('social.instagram'),
+                        'twitter'   => Setting::get('social.twitter'),
+                        'linkedin'  => Setting::get('social.linkedin'),
+                        'whatsapp'  => Setting::get('social.whatsapp'),
+                    ],
+                    'home_hero'    => Setting::get('home.hero'),
+                    'home_gallery' => json_decode(Setting::get('home.gallery','[]'), true) ?: [],
+                ];
+            });
+            $view->with('appSettings', $settings);
+        });
+    }
+}

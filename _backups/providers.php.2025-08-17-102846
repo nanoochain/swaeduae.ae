@@ -1,0 +1,15 @@
+<?php
+return [
+    App\Providers\AppServiceProvider::class,
+    App\Providers\AuthServiceProvider::class,
+    App\Providers\DashboardCacheServiceProvider::class,
+    App\Providers\EventServiceProvider::class,
+    App\Providers\LoadAllRoutesServiceProvider::class,
+    App\Providers\MiddlewareAliasesServiceProvider::class,
+    App\Providers\OrgDashboardServiceProvider::class,
+    App\Providers\OrgShortlistRoutesServiceProvider::class,
+    App\Providers\RouteServiceProvider::class,
+    App\Providers\SpatieAliasesServiceProvider::class,
+    App\Providers\UaePassSocialiteServiceProvider::class,
+    App\Providers\ViewComposerServiceProvider::class,
+];
