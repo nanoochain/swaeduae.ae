@@ -17,7 +17,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, intl, pdo_mysql, bcmath, ctype, tokenizer, dom, curl, fileinfo, json, xml
+          extensions: mbstring, intl, pdo_mysql, bcmath, ctype, tokenizer, dom, curl, fileinfo, gd, openssl, json, xml, zip
           coverage: none
 
       - name: Cache Composer vendor
@@ -44,5 +44,9 @@ jobs:
       - name: Node build (if package.json exists)
         if: hashFiles('**/package.json') != ''
         run: |
-          npm ci --no-audit --no-fund
-          if [ -f vite.config.js ] || [ -f webpack.mix.js ]; then npm run build; else echo "No frontend build"; fi
+          if [ -f vite.config.js ] || [ -f webpack.mix.js ]; then
+            npm ci --no-audit --no-fund
+            npm run build
+          else
+            echo "No frontend build"
+          fi
